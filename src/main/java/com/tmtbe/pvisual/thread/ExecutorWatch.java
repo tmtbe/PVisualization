@@ -23,6 +23,6 @@ public class ExecutorWatch extends PWatch {
     @Override
     protected void before(Advice advice) throws Throwable {
         Runnable runnable = (Runnable) advice.getParameterArray()[0];
-        advice.getParameterArray()[0] = TtlRunnable.get(runnable, false, true);
+        advice.changeParameter(0, TtlRunnable.get(runnable, false, true));
     }
 }

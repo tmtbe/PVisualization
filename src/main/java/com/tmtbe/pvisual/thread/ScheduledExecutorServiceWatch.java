@@ -27,9 +27,9 @@ public class ScheduledExecutorServiceWatch extends PWatch {
     protected void before(Advice advice) throws Throwable {
         Object param = advice.getParameterArray()[0];
         if (param instanceof Runnable) {
-            advice.getParameterArray()[0] = TtlRunnable.get((Runnable) param, false, true);
+            advice.changeParameter(0, TtlRunnable.get((Runnable) param, false, true));
         } else if (param instanceof Callable) {
-            advice.getParameterArray()[0] = TtlCallable.get((Callable<?>) param, false, true);
+            advice.changeParameter(0, TtlCallable.get((Callable<?>) param, false, true));
         }
     }
 }

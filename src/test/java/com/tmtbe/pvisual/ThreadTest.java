@@ -4,15 +4,32 @@ import com.alibaba.ttl.TransmittableThreadLocal;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ThreadTest {
     public static void main(String[] args) throws InterruptedException {
+        test2();
+    }
+
+    public static void test1() {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        TransmittableThreadLocal<String> transmittableThreadLocal = new TransmittableThreadLocal<>();
+        transmittableThreadLocal.set("value-set-in-parent");
+        Runnable task = () -> System.out.println("[child thread] get " + transmittableThreadLocal.get() + " in Runnable");
+        executorService.submit(task);
+        transmittableThreadLocal.set("value-set-in-parent2");
+        executorService.submit(task);
+    }
+
+    public static void test2() throws InterruptedException {
+        TransmittableThreadLocal<String> transmittableThreadLocal = new TransmittableThreadLocal<>();
+        transmittableThreadLocal.set("C");
         ArrayList<Integer> integers = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             integers.add(i);
         }
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        TransmittableThreadLocal<String> transmittableThreadLocal = new TransmittableThreadLocal<>();
         new Thread(() -> {
             transmittableThreadLocal.set("A");
             integers.stream().parallel().forEach(i -> {

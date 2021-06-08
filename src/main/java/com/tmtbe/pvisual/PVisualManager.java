@@ -14,6 +14,7 @@ public class PVisualManager extends PVisualWatcherManager {
         add(new ExecutorServiceWatch());
         add(new ExecutorWatch());
         add(new ForkJoinTaskWatch());
+        add(new ForkJoinTaskInitWatch());
         add(new ForkJoinWorkerThreadFactoryWatch());
         add(new ScheduledExecutorServiceWatch());
     }
