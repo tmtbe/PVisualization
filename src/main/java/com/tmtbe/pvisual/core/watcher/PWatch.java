@@ -81,6 +81,20 @@ public abstract class PWatch extends AdviceListener {
         }
     }
 
+    protected void startSpan(Advice advice, Span span, Consumer<Span> handler) {
+        Context context = new Context();
+        advice.attach(context);
+        PTracer parent = PTracer.getParent();
+        //保存当前PTracer
+        context.setPTracer(parent);
+        context.setSpan(span);
+        //用Span设置新的PTracer
+        PTracer.setParent(new PTracer(PTracer.getTracing().tracer(), span));
+        if (handler != null) {
+            handler.accept(span);
+        }
+    }
+
     protected void finishSpan(Advice advice, Consumer<Span> handler) {
         Context context = getContext(advice);
         Span span = context.getSpan();

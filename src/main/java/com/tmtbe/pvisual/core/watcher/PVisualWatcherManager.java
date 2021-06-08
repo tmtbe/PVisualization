@@ -32,7 +32,7 @@ public class PVisualWatcherManager {
         EventWatchBuilder.IBuildingForWatching iBuildingForWatching = iBuildingForBehavior.onWatching();
         pWatch.buildingForWatching(iBuildingForWatching);
         if (printer != null) {
-            iBuildingForWatching.withProgress(new ProgressPrinter(printer));
+            iBuildingForWatching.withProgress(new ProgressPrinter(printer, pWatch.getName()));
         }
         int watchId = iBuildingForWatching.onWatch(pWatch).getWatchId();
         iWatchHashMap.put(pWatch.getName(), watchId);
@@ -43,7 +43,7 @@ public class PVisualWatcherManager {
         Integer watchId = iWatchHashMap.get(watcherName);
         if (watchId != null) {
             if (printer != null) {
-                moduleEventWatcher.delete(watchId, new ProgressPrinter(printer));
+                moduleEventWatcher.delete(watchId, new ProgressPrinter(printer, watcherName));
             } else {
                 moduleEventWatcher.delete(watchId);
             }
@@ -51,12 +51,13 @@ public class PVisualWatcherManager {
     }
 
     public void removeAll() {
-        iWatchHashMap.values().forEach(watchId -> {
+        iWatchHashMap.forEach((watchName, watchId) -> {
             if (printer != null) {
-                moduleEventWatcher.delete(watchId, new ProgressPrinter(printer));
+                moduleEventWatcher.delete(watchId, new ProgressPrinter(printer, watchName));
             } else {
                 moduleEventWatcher.delete(watchId);
             }
         });
+        iWatchHashMap.clear();
     }
 }

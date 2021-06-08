@@ -13,21 +13,24 @@ public class ProgressPrinter implements ModuleEventWatcher.Progress {
     private final String prefix;
     private final int width;
     private final Printer printer;
+    private final String watchName;
     private int total;
 
-    public ProgressPrinter(Printer printer) {
-        this("", 50, printer);
+    public ProgressPrinter(Printer printer, String watchName) {
+        this("", 50, printer, watchName);
     }
 
-    public ProgressPrinter(String prefix, int width, Printer printer) {
+    public ProgressPrinter(String prefix, int width, Printer printer, String watchName) {
         this.prefix = prefix;
         this.width = width;
         this.printer = printer;
+        this.watchName = watchName;
     }
 
     @Override
     public void begin(int total) {
         this.total = total;
+        printer.println(watchName);
         printer.print("%s[");
     }
 
