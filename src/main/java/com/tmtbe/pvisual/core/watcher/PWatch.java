@@ -2,43 +2,28 @@ package com.tmtbe.pvisual.core.watcher;
 
 import brave.Span;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
-import com.alibaba.jvm.sandbox.api.listener.ext.AdviceListener;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
+import com.tmtbe.pvisual.core.support.ExConsumer;
 import com.tmtbe.pvisual.core.trace.PTracer;
-import lombok.NonNull;
+import lombok.Getter;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
-public abstract class PWatch extends AdviceListener {
-    protected boolean isCheckSuccess = false;
-
-    /**
-     * 检查是否满足条件，满足会执行runnable
-     *
-     * @param runnable runnable
-     */
-    public void check(@NonNull Runnable runnable) {
-        if (isCheckSuccess) {
-            runnable.run();
-            return;
-        }
-        try {
-            onCheck();
-            isCheckSuccess = true;
-        } catch (Throwable e) {
-            isCheckSuccess = false;
-        }
-        if (isCheckSuccess) {
-            runnable.run();
-        }
-    }
+@Slf4j
+public abstract class PWatch {
+    @Getter
+    protected PAdviceListener adviceListener = new PAdviceListener(this);
 
     /**
      * 没有异常则认为Check状态是通过的
      *
      * @throws Throwable Throwable
      */
-    protected abstract void onCheck() throws Throwable;
+    protected abstract void checking() throws Throwable;
 
     public abstract String getWatchClassName();
 
@@ -81,7 +66,8 @@ public abstract class PWatch extends AdviceListener {
         }
     }
 
-    protected void startSpan(Advice advice, Span span, Consumer<Span> handler) {
+    @SneakyThrows
+    protected void startSpan(Advice advice, Span span, ExConsumer<Span> handler) {
         Context context = new Context();
         advice.attach(context);
         PTracer parent = PTracer.getParent();
@@ -95,8 +81,10 @@ public abstract class PWatch extends AdviceListener {
         }
     }
 
-    protected void finishSpan(Advice advice, Consumer<Span> handler) {
+    @SneakyThrows
+    protected void finishSpan(Advice advice, ExConsumer<Span> handler) {
         Context context = getContext(advice);
+        if (context == null) return;
         Span span = context.getSpan();
         if (span != null) {
             if (handler != null) {
@@ -108,20 +96,36 @@ public abstract class PWatch extends AdviceListener {
         PTracer.setParent(context.getPTracer());
     }
 
-    @Override
     protected void before(Advice advice) throws Throwable {
-        check(() -> startSpan(advice, span -> {
+        startSpan(advice, span -> {
             span.kind(Span.Kind.CLIENT);
             span.name(getName());
-        }));
+        });
     }
 
-    @Override
     protected void after(Advice advice) throws Throwable {
-        check(() -> finishSpan(advice, null));
+        finishSpan(advice, null);
     }
 
     public EventWatchBuilder.PatternType getPatternType() {
         return EventWatchBuilder.PatternType.REGEX;
+    }
+
+    protected Class<?> getBClass(String className) throws ClassNotFoundException {
+        return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+    }
+
+    protected void addStackTrace(Span span) {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        ArrayList<String> stack = new ArrayList<>();
+        int index = 0;
+        for (int i = stackTrace.length - 1; i >= 0; i--) {
+            if (stackTrace[i].getClassName().startsWith("java.com.alibaba.jvm.sandbox")) break;
+            StringBuilder one = new StringBuilder();
+            one.append("[").append(index).append("] ").append(stackTrace[i].getClassName()).append("::").append(stackTrace[i].getMethodName()).append("  ").append(stackTrace[i].getLineNumber());
+            stack.add(one.toString());
+            index++;
+        }
+        span.tag("stackTrace", StringUtils.join(stack, "\n"));
     }
 }

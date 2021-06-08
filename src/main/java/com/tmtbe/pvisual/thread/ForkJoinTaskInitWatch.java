@@ -11,7 +11,7 @@ public class ForkJoinTaskInitWatch extends PWatch {
             = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
     @Override
-    protected void onCheck() throws Throwable {
+    protected void checking() throws Throwable {
 
     }
 

@@ -6,10 +6,16 @@ import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.watcher.PWatch;
 
-public class HttpServletWatch extends PWatch {
-    @Override
-    protected void onCheck() throws Throwable {
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
+public class HttpServletWatch extends PWatch {
+    protected Method getMethod;
+
+    @Override
+    protected void checking() throws Throwable {
+        Class<?> httpServletRequestClass = getBClass("javax.servlet.http.HttpServletRequest");
+        getMethod = httpServletRequestClass.getDeclaredMethod("getMethod");
     }
 
     @Override
@@ -24,20 +30,27 @@ public class HttpServletWatch extends PWatch {
 
     @Override
     public void buildingForBehavior(EventWatchBuilder.IBuildingForBehavior iBuildingForBehavior) {
-        iBuildingForBehavior.withParameterTypes("javax.servlet.http.HttpServletRequest", "javax.servlet.http.HttpServletResponse");
+        iBuildingForBehavior.withAccess(Modifier.PROTECTED);
+    }
+
+    @Override
+    public void buildingForClass(EventWatchBuilder.IBuildingForClass iBuildingForClass) {
+
     }
 
     @Override
     protected void before(Advice advice) throws Throwable {
         Span traceSpan = PTracer.startTracerSpan();
-        check(() -> startSpan(advice, traceSpan, span -> {
-            span.kind(Span.Kind.CLIENT);
-            span.name(getName());
-        }));
+        startSpan(advice, traceSpan, span -> {
+            span.kind(Span.Kind.SERVER);
+            span.name((String) getMethod.invoke(advice.getParameterArray()[0]));
+            span.tag("getModifiers", advice.getBehavior().getModifiers() + "");
+            addStackTrace(span);
+        });
     }
 
     @Override
     protected void after(Advice advice) throws Throwable {
-        check(() -> finishSpan(advice, null));
+        finishSpan(advice, null);
     }
 }

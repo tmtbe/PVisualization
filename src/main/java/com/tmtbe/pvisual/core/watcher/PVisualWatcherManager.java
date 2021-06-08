@@ -22,8 +22,6 @@ public class PVisualWatcherManager {
         if (iWatchHashMap.containsKey(pWatch.getName())) {
             return false;
         }
-        pWatch.check(() -> {
-        });
         EventWatchBuilder.IBuildingForClass iBuildingForClass = new EventWatchBuilder(moduleEventWatcher, pWatch.getPatternType())
                 .onClass(pWatch.getWatchClassName());
         pWatch.buildingForClass(iBuildingForClass);
@@ -34,7 +32,7 @@ public class PVisualWatcherManager {
         if (printer != null) {
             iBuildingForWatching.withProgress(new ProgressPrinter(printer, pWatch.getName()));
         }
-        int watchId = iBuildingForWatching.onWatch(pWatch).getWatchId();
+        int watchId = iBuildingForWatching.onWatch(pWatch.adviceListener).getWatchId();
         iWatchHashMap.put(pWatch.getName(), watchId);
         return true;
     }

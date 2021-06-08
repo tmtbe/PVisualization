@@ -8,7 +8,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public class ForkJoinWorkerThreadFactoryWatch extends PWatch {
     @Override
-    protected void onCheck() throws Throwable {
+    protected void checking() throws Throwable {
 
     }
 

@@ -6,7 +6,7 @@ import com.tmtbe.pvisual.core.watcher.PWatch;
 
 public class ExecutorWatch extends PWatch {
     @Override
-    protected void onCheck() throws Throwable {
+    protected void checking() throws Throwable {
 
     }
 

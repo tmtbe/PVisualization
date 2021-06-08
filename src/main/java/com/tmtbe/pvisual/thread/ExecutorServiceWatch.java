@@ -10,7 +10,7 @@ import java.util.concurrent.Callable;
 
 public class ExecutorServiceWatch extends PWatch {
     @Override
-    protected void onCheck() throws Throwable {
+    protected void checking() throws Throwable {
 
     }
 
