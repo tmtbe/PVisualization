@@ -5,9 +5,11 @@ import brave.Tracer;
 import brave.Tracing;
 import brave.propagation.TraceContext;
 import com.alibaba.ttl.TransmittableThreadLocal;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.brave.ZipkinSpanHandler;
 import zipkin2.reporter.okhttp3.OkHttpSender;
@@ -36,8 +38,12 @@ public class PTracer {
         parentThreadLocal.set(parent);
     }
 
-    public static Tracing getTracing(@NonNull String localServiceName,
-                                     @NonNull String zipkinEndPoint) {
+    public static Tracing getTracing() throws PTraceException {
+        String localServiceName = TraceConfig.INSTANCE.getLocalServiceName();
+        String zipkinEndPoint = TraceConfig.INSTANCE.getZipkinEndPoint();
+        if (StringUtils.isAnyEmpty(localServiceName, zipkinEndPoint)) {
+            throw new PTraceException("Trace Config is not setting");
+        }
         return tracingMap.compute(localServiceName + zipkinEndPoint, (k, v) -> {
             if (v == null) {
                 OkHttpSender sender = OkHttpSender.newBuilder().endpoint(zipkinEndPoint).build();
@@ -51,8 +57,8 @@ public class PTracer {
         });
     }
 
-    public static Span startTracerSpan(@NonNull Tracing tracing) {
-        Tracer tracer = tracing.tracer();
+    public static Span startTracerSpan() throws PTraceException {
+        Tracer tracer = getTracing().tracer();
         Span span = tracer.newTrace();
         span.start();
         tracerMap.putIfAbsent(span.context().traceId(), tracer);
