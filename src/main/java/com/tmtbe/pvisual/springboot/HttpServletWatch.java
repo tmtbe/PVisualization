@@ -35,7 +35,7 @@ public class HttpServletWatch extends PWatch {
 
     @Override
     public void buildingForClass(EventWatchBuilder.IBuildingForClass iBuildingForClass) {
-
+        // 默认会includeSubClasses，导致会有2个Trace这里重写下。
     }
 
     @Override
