@@ -10,13 +10,18 @@ public class DynamicWatch extends PWatch {
     private final String watchMethodName;
 
     public DynamicWatch(String str) {
-        String[] split = str.split(":");
-        if (split.length == 2) {
-            watchClassName = split[0];
-            watchMethodName = split[1];
-        } else {
+        if (str == null) {
             watchMethodName = null;
             watchClassName = null;
+        } else {
+            String[] split = str.split(":");
+            if (split.length == 2) {
+                watchClassName = split[0];
+                watchMethodName = split[1];
+            } else {
+                watchMethodName = null;
+                watchClassName = null;
+            }
         }
     }
 
