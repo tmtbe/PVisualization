@@ -17,6 +17,7 @@ import java.util.HashMap;
 public abstract class PVisualWatcherManager {
     private boolean isEnhance = false;
     private final ModuleEventWatcher moduleEventWatcher;
+    @Getter
     private final HashMap<String, WatchData> watchDataMap = new HashMap<>();
     @Getter
     private TraceConfig traceConfig;

@@ -68,15 +68,27 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
         pVisualManager.unEnhance(writer);
     }
 
-    @Command("end")
+    @Command("add")
     public void add(final Map<String, String> param, final PrintWriter writer) {
-        String str = param.get("d");
-        DynamicWatch dynamicWatch = new DynamicWatch(str);
+        String name = param.get("n");
+        DynamicWatch dynamicWatch = new DynamicWatch(name);
         try {
             pVisualManager.dynamicAdd(dynamicWatch);
         } catch (Throwable e) {
             writer.println(e.getMessage());
             writer.flush();
         }
+    }
+
+    @Command("remove")
+    public void remove(final Map<String, String> param, final PrintWriter writer) {
+        String name = param.get("n");
+        pVisualManager.remove(name, writer);
+    }
+
+    @Command("list")
+    public void list(final Map<String, String> param, final PrintWriter writer) {
+        pVisualManager.getWatchDataMap().keySet().forEach(writer::println);
+        writer.flush();
     }
 }
