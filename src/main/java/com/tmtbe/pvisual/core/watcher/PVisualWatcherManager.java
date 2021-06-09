@@ -59,6 +59,7 @@ public abstract class PVisualWatcherManager {
             return null;
         }
         pWatch.setPVisualWatcherManager(this);
+        pWatch.adviceListener.tryCheck();
         WatchData watchData = new WatchData();
         watchData.setName(pWatch.getName());
         watchData.setRunnable(() -> {

@@ -37,6 +37,17 @@ public class PAdviceListener extends AdviceListener {
         }
     }
 
+    /**
+     * 尝试进行Check
+     */
+    public void tryCheck() {
+        try {
+            pWatch.checking();
+            isCheckSuccess = true;
+        } catch (Throwable e) {
+        }
+    }
+
     @Override
     protected void before(Advice advice) throws Throwable {
         check(() -> pWatch.before(advice));

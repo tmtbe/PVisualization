@@ -1,9 +1,11 @@
 package com.tmtbe.pvisual.core.trace;
 
 import com.tmtbe.pvisual.core.support.PTraceException;
+import lombok.Getter;
 
 public enum TracingLevel {
     PERFORMANCE(0), NORMAL(1), INFO(2), MORE(3);
+    @Getter
     private final int level;
 
     TracingLevel(int level) {

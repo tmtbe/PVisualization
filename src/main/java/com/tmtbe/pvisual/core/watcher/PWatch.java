@@ -62,6 +62,7 @@ public abstract class PWatch implements RemoveHandle {
         if (parent != null) {
             Span span = PTracer.startSpan(parent.getTracer(), parent.getSpan().context());
             context.setSpan(span);
+            addStackTrace(span);
             //用Span设置新的PTracer
             PTracer.setParent(new PTracer(parent.getTracer(), span));
             if (handler != null) {
@@ -78,6 +79,7 @@ public abstract class PWatch implements RemoveHandle {
         //保存当前PTracer
         context.setPTracer(parent);
         context.setSpan(span);
+        addStackTrace(span);
         //用Span设置新的PTracer
         PTracer.setParent(new PTracer(PTracer.getTracing(pVisualWatcherManager).tracer(), span));
         if (handler != null) {
@@ -119,15 +121,17 @@ public abstract class PWatch implements RemoveHandle {
     }
 
     protected void addStackTrace(Span span) {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        ArrayList<String> stack = new ArrayList<>();
-        int index = 0;
-        for (int i = stackTrace.length - 1; i >= 0; i--) {
-            if (stackTrace[i].getClassName().startsWith("java.com.alibaba.jvm.sandbox")) break;
-            stack.add("[" + index + "] " + stackTrace[i].getClassName() + "::" + stackTrace[i].getMethodName() + "  " + stackTrace[i].getLineNumber());
-            index++;
+        if (tracingLevel.getLevel() > TracingLevel.NORMAL.getLevel()) {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            ArrayList<String> stack = new ArrayList<>();
+            int index = 0;
+            for (int i = stackTrace.length - 1; i >= 0; i--) {
+                if (stackTrace[i].getClassName().startsWith("java.com.alibaba.jvm.sandbox")) break;
+                stack.add("[" + index + "] " + stackTrace[i].getClassName() + "::" + stackTrace[i].getMethodName() + "  " + stackTrace[i].getLineNumber());
+                index++;
+            }
+            span.tag("stackTrace", StringUtils.join(stack, "\n"));
         }
-        span.tag("stackTrace", StringUtils.join(stack, "\n"));
     }
 
     public void setPVisualWatcherManager(PVisualWatcherManager pVisualWatcherManager) {
