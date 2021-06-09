@@ -13,7 +13,9 @@ public class WatchData {
     private RemoveHandle removeHandle;
 
     public void run() {
-        this.runnable.run();
+        if (!isRunning()) {
+            this.runnable.run();
+        }
     }
 
     public boolean isRunning() {

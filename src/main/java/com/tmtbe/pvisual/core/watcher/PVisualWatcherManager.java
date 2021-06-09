@@ -4,6 +4,7 @@ import com.alibaba.jvm.sandbox.api.http.printer.ConcurrentLinkedQueuePrinter;
 import com.alibaba.jvm.sandbox.api.http.printer.Printer;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.support.ProgressPrinter;
 import com.tmtbe.pvisual.core.thread.*;
 import com.tmtbe.pvisual.core.trace.TraceConfig;
@@ -13,6 +14,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 
 public abstract class PVisualWatcherManager {
+    private boolean isEnhance = false;
     private final ModuleEventWatcher moduleEventWatcher;
     private final HashMap<String, WatchData> watchDataMap = new HashMap<>();
     @Getter
@@ -36,9 +38,9 @@ public abstract class PVisualWatcherManager {
         this.printer = printer;
     }
 
-    public void add(PWatch pWatch) {
+    public WatchData add(PWatch pWatch) {
         if (watchDataMap.containsKey(pWatch.getName())) {
-            return;
+            return null;
         }
         pWatch.setPVisualWatcherManager(this);
         WatchData watchData = new WatchData();
@@ -58,6 +60,19 @@ public abstract class PVisualWatcherManager {
         });
         watchData.setRemoveHandle(pWatch);
         watchDataMap.put(watchData.getName(), watchData);
+        return watchData;
+    }
+
+    public void dynamicAdd(PWatch pWatch) throws Throwable {
+        pWatch.checking();
+        if (this.traceConfig == null) {
+            throw new PTraceException("TraceConfig is not exist");
+        }
+        if (!this.isEnhance) {
+            throw new PTraceException("Not enhance");
+        }
+        WatchData watchData = add(pWatch);
+        watchData.run();
     }
 
     protected abstract void prepare();
@@ -71,6 +86,7 @@ public abstract class PVisualWatcherManager {
         prepare0();
         prepare();
         watchDataMap.values().forEach(WatchData::run);
+        this.isEnhance = true;
     }
 
     public void remove(String watcherName, final PrintWriter writer) {
@@ -81,11 +97,12 @@ public abstract class PVisualWatcherManager {
         watchData.delete(moduleEventWatcher, printer);
     }
 
-    public void removeAll(final PrintWriter writer) {
+    public void unEnhance(final PrintWriter writer) {
         if (writer != null) {
             setPrinter(new ConcurrentLinkedQueuePrinter(writer));
         }
         watchDataMap.forEach((watchName, watchData) -> watchData.delete(moduleEventWatcher, printer));
         watchDataMap.clear();
+        isEnhance = false;
     }
 }

@@ -6,6 +6,7 @@ import com.alibaba.jvm.sandbox.api.ModuleLifecycle;
 import com.alibaba.jvm.sandbox.api.annotation.Command;
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
 import com.alibaba.jvm.sandbox.api.resource.ModuleManager;
+import com.tmtbe.pvisual.core.DynamicWatch;
 import com.tmtbe.pvisual.core.support.ParamSupported;
 import com.tmtbe.pvisual.core.trace.TraceConfig;
 import org.kohsuke.MetaInfServices;
@@ -64,6 +65,18 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
 
     @Command("end")
     public void end(final Map<String, String> param, final PrintWriter writer) {
-        pVisualManager.removeAll(writer);
+        pVisualManager.unEnhance(writer);
+    }
+
+    @Command("end")
+    public void add(final Map<String, String> param, final PrintWriter writer) {
+        String str = param.get("d");
+        DynamicWatch dynamicWatch = new DynamicWatch(str);
+        try {
+            pVisualManager.dynamicAdd(dynamicWatch);
+        } catch (Throwable e) {
+            writer.println(e.getMessage());
+            writer.flush();
+        }
     }
 }
