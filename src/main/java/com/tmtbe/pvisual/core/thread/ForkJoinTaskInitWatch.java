@@ -1,9 +1,10 @@
-package com.tmtbe.pvisual.thread;
+package com.tmtbe.pvisual.core.thread;
 
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.alibaba.ttl.spi.TtlEnhanced;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchData;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 public class ForkJoinTaskInitWatch extends PWatch {
@@ -31,5 +32,10 @@ public class ForkJoinTaskInitWatch extends PWatch {
             return;
         }
         captureMap.put(advice.getTarget(), TransmittableThreadLocal.Transmitter.capture());
+    }
+
+    @Override
+    public void onRemove(WatchData watchData) {
+        captureMap.clear();
     }
 }

@@ -4,7 +4,6 @@ import com.alibaba.jvm.sandbox.api.Information;
 import com.alibaba.jvm.sandbox.api.Module;
 import com.alibaba.jvm.sandbox.api.ModuleLifecycle;
 import com.alibaba.jvm.sandbox.api.annotation.Command;
-import com.alibaba.jvm.sandbox.api.http.printer.ConcurrentLinkedQueuePrinter;
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
 import com.alibaba.jvm.sandbox.api.resource.ModuleManager;
 import com.tmtbe.pvisual.core.support.ParamSupported;
@@ -29,7 +28,7 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
 
     @Override
     public void onLoad() throws Throwable {
-        pVisualManager = new PVisualManager(moduleEventWatcher, null);
+        pVisualManager = new PVisualManager(moduleEventWatcher);
     }
 
     @Override
@@ -40,10 +39,6 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
     @Override
     public void onActive() throws Throwable {
         System.out.println("PVisual Active");
-        TraceConfig.INSTANCE.setZipkinEndPoint("http://localhost:9411/api/v2/spans");
-        TraceConfig.INSTANCE.setLocalServiceName("Demo");
-        TraceConfig.INSTANCE.print();
-        pVisualManager.enhance();
     }
 
     @Override
@@ -61,16 +56,14 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
         String endpoint = "http://{0}:{1}/api/v2/spans";
         String host = param.getOrDefault("host", "localhost");
         String port = param.getOrDefault("port", "9411");
-        TraceConfig.INSTANCE.setZipkinEndPoint(MessageFormat.format(endpoint, host, port));
-        TraceConfig.INSTANCE.setLocalServiceName(param.getOrDefault("name", "Demo"));
-        TraceConfig.INSTANCE.print();
-        pVisualManager.setPrinter(new ConcurrentLinkedQueuePrinter(writer));
-        pVisualManager.enhance();
+        TraceConfig traceConfig = new TraceConfig();
+        traceConfig.setZipkinEndPoint(MessageFormat.format(endpoint, host, port));
+        traceConfig.setLocalServiceName(param.getOrDefault("name", "Demo"));
+        pVisualManager.enhance(writer, traceConfig);
     }
 
     @Command("end")
     public void end(final Map<String, String> param, final PrintWriter writer) {
-        pVisualManager.setPrinter(new ConcurrentLinkedQueuePrinter(writer));
-        pVisualManager.removeAll();
+        pVisualManager.removeAll(writer);
     }
 }

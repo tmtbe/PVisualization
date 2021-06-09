@@ -6,6 +6,7 @@ import brave.Tracing;
 import brave.propagation.TraceContext;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.tmtbe.pvisual.core.support.PTraceException;
+import com.tmtbe.pvisual.core.watcher.PVisualWatcherManager;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
@@ -40,9 +41,9 @@ public class PTracer {
     }
 
     @SneakyThrows
-    public static Tracing getTracing() {
-        String localServiceName = TraceConfig.INSTANCE.getLocalServiceName();
-        String zipkinEndPoint = TraceConfig.INSTANCE.getZipkinEndPoint();
+    public static Tracing getTracing(PVisualWatcherManager pVisualWatcherManager) {
+        String localServiceName = pVisualWatcherManager.getTraceConfig().getLocalServiceName();
+        String zipkinEndPoint = pVisualWatcherManager.getTraceConfig().getZipkinEndPoint();
         if (StringUtils.isAnyEmpty(localServiceName, zipkinEndPoint)) {
             throw new PTraceException("Trace Config is not setting");
         }
@@ -59,8 +60,8 @@ public class PTracer {
         });
     }
 
-    public static Span startTracerSpan() {
-        Tracer tracer = getTracing().tracer();
+    public static Span startTracerSpan(PVisualWatcherManager pVisualWatcherManager) {
+        Tracer tracer = getTracing(pVisualWatcherManager).tracer();
         Span span = tracer.newTrace();
         span.start();
         tracerMap.putIfAbsent(span.context().traceId(), tracer);
@@ -84,6 +85,7 @@ public class PTracer {
         });
         tracerMap.remove(traceId);
         spanTagMap.remove(traceId);
+        parentThreadLocal.set(null);
     }
 
     public static Span startSpan(@NonNull Tracer tracer, @NonNull TraceContext traceContext) {

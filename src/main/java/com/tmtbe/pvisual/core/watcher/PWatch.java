@@ -6,6 +6,7 @@ import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.support.ExConsumer;
 import com.tmtbe.pvisual.core.trace.PTracer;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +15,9 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 
 @Slf4j
-public abstract class PWatch {
+public abstract class PWatch implements RemoveHandle {
+    @Setter
+    protected PVisualWatcherManager pVisualWatcherManager;
     @Getter
     protected PAdviceListener adviceListener = new PAdviceListener(this);
 
@@ -75,7 +78,7 @@ public abstract class PWatch {
         context.setPTracer(parent);
         context.setSpan(span);
         //用Span设置新的PTracer
-        PTracer.setParent(new PTracer(PTracer.getTracing().tracer(), span));
+        PTracer.setParent(new PTracer(PTracer.getTracing(pVisualWatcherManager).tracer(), span));
         if (handler != null) {
             handler.accept(span);
         }
@@ -98,8 +101,7 @@ public abstract class PWatch {
 
     protected void before(Advice advice) throws Throwable {
         startSpan(advice, span -> {
-            span.kind(Span.Kind.CLIENT);
-            span.name(getName());
+            span.name(advice.getTarget().getClass().getSimpleName() + ":" + advice.getBehavior().getName());
         });
     }
 
@@ -121,9 +123,7 @@ public abstract class PWatch {
         int index = 0;
         for (int i = stackTrace.length - 1; i >= 0; i--) {
             if (stackTrace[i].getClassName().startsWith("java.com.alibaba.jvm.sandbox")) break;
-            StringBuilder one = new StringBuilder();
-            one.append("[").append(index).append("] ").append(stackTrace[i].getClassName()).append("::").append(stackTrace[i].getMethodName()).append("  ").append(stackTrace[i].getLineNumber());
-            stack.add(one.toString());
+            stack.add("[" + index + "] " + stackTrace[i].getClassName() + "::" + stackTrace[i].getMethodName() + "  " + stackTrace[i].getLineNumber());
             index++;
         }
         span.tag("stackTrace", StringUtils.join(stack, "\n"));

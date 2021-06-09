@@ -1,14 +1,13 @@
-package com.tmtbe.pvisual.thread;
+package com.tmtbe.pvisual.core.thread;
 
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.ttl.TtlCallable;
 import com.alibaba.ttl.TtlRunnable;
 import com.tmtbe.pvisual.core.watcher.PWatch;
 
-import java.util.Collection;
 import java.util.concurrent.Callable;
 
-public class ExecutorServiceWatch extends PWatch {
+public class ScheduledExecutorServiceWatch extends PWatch {
     @Override
     protected void checking() throws Throwable {
 
@@ -16,12 +15,12 @@ public class ExecutorServiceWatch extends PWatch {
 
     @Override
     public String getWatchClassName() {
-        return "java.util.concurrent.ExecutorService";
+        return "java.util.concurrent.ScheduledExecutorService";
     }
 
     @Override
     public String getWatchMethodName() {
-        return "submit|invokeAll|invokeAny";
+        return "schedule|scheduleAtFixedRate|scheduleWithFixedDelay";
     }
 
     @Override
@@ -31,8 +30,6 @@ public class ExecutorServiceWatch extends PWatch {
             advice.changeParameter(0, TtlRunnable.get((Runnable) param, false, true));
         } else if (param instanceof Callable) {
             advice.changeParameter(0, TtlCallable.get((Callable<?>) param, false, true));
-        } else if (param instanceof Collection) {
-            advice.changeParameter(0, TtlCallable.gets((Collection) param, false, true));
         }
     }
 }

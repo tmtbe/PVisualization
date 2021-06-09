@@ -40,7 +40,7 @@ public class HttpServletWatch extends PWatch {
 
     @Override
     protected void before(Advice advice) throws Throwable {
-        Span traceSpan = PTracer.startTracerSpan();
+        Span traceSpan = PTracer.startTracerSpan(pVisualWatcherManager);
         startSpan(advice, traceSpan, span -> {
             span.kind(Span.Kind.SERVER);
             span.name((String) getMethod.invoke(advice.getParameterArray()[0]));

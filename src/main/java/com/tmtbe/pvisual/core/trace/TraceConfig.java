@@ -1,15 +1,10 @@
 package com.tmtbe.pvisual.core.trace;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-public enum TraceConfig {
-    INSTANCE;
-    @Getter
-    @Setter
+@Data
+public class TraceConfig {
     private String localServiceName;
-    @Getter
-    @Setter
     private String zipkinEndPoint;
 
     public void print() {
