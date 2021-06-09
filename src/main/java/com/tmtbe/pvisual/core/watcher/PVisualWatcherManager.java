@@ -4,27 +4,41 @@ import com.alibaba.jvm.sandbox.api.http.printer.ConcurrentLinkedQueuePrinter;
 import com.alibaba.jvm.sandbox.api.http.printer.Printer;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
+import com.tmtbe.pvisual.core.support.ExRunnable;
 import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.support.ProgressPrinter;
 import com.tmtbe.pvisual.core.thread.*;
 import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.trace.TraceConfig;
 import lombok.Getter;
+import lombok.SneakyThrows;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.concurrent.Semaphore;
 
 public abstract class PVisualWatcherManager {
+    protected static final Semaphore semaphore = new Semaphore(1);
     private boolean isEnhance = false;
     private final ModuleEventWatcher moduleEventWatcher;
     @Getter
-    private final HashMap<String, WatchData> watchDataMap = new HashMap<>();
+    private final LinkedHashMap<String, WatchData> watchDataMap = new LinkedHashMap<>();
     @Getter
     private TraceConfig traceConfig;
     private Printer printer;
 
     public PVisualWatcherManager(ModuleEventWatcher moduleEventWatcher) {
         this.moduleEventWatcher = moduleEventWatcher;
+    }
+
+    @SneakyThrows
+    protected void runInLock(final PrintWriter writer, ExRunnable runnable) {
+        if (semaphore.tryAcquire()) {
+            runnable.run();
+            semaphore.release();
+        } else {
+            writer.println("Task is occupied, please wait.");
+        }
     }
 
     protected void prepare0() {
@@ -79,16 +93,19 @@ public abstract class PVisualWatcherManager {
 
     protected abstract void prepare();
 
+    @SneakyThrows
     public void enhance(final PrintWriter writer, TraceConfig traceConfig) {
-        this.traceConfig = traceConfig;
-        traceConfig.print();
-        if (writer != null) {
-            setPrinter(new ConcurrentLinkedQueuePrinter(writer));
-        }
-        prepare0();
-        prepare();
-        watchDataMap.values().forEach(WatchData::run);
-        this.isEnhance = true;
+        runInLock(writer, () -> {
+            this.traceConfig = traceConfig;
+            traceConfig.print();
+            if (writer != null) {
+                setPrinter(new ConcurrentLinkedQueuePrinter(writer));
+            }
+            prepare0();
+            prepare();
+            watchDataMap.values().forEach(WatchData::run);
+            this.isEnhance = true;
+        });
     }
 
     public void remove(String watcherName, final PrintWriter writer) {
@@ -99,13 +116,16 @@ public abstract class PVisualWatcherManager {
         watchData.delete(moduleEventWatcher, printer);
     }
 
+    @SneakyThrows
     public void unEnhance(final PrintWriter writer) {
-        if (writer != null) {
-            setPrinter(new ConcurrentLinkedQueuePrinter(writer));
-        }
-        watchDataMap.forEach((watchName, watchData) -> watchData.delete(moduleEventWatcher, printer));
-        watchDataMap.clear();
-        PTracer.clear();
-        isEnhance = false;
+        runInLock(writer, () -> {
+            if (writer != null) {
+                setPrinter(new ConcurrentLinkedQueuePrinter(writer));
+            }
+            watchDataMap.forEach((watchName, watchData) -> watchData.delete(moduleEventWatcher, printer));
+            watchDataMap.clear();
+            PTracer.clear();
+            isEnhance = false;
+        });
     }
 }

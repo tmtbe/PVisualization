@@ -6,9 +6,11 @@ import lombok.Data;
 public class TraceConfig {
     private String localServiceName;
     private String zipkinEndPoint;
+    private TracingLevel tracingLevel;
 
     public void print() {
-        System.out.println("zipkinEndPoint:" + zipkinEndPoint);
-        System.out.println("localServiceName:" + localServiceName);
+        System.out.println("ZipkinEndPoint: " + zipkinEndPoint);
+        System.out.println("LocalServiceName: " + localServiceName);
+        System.out.println("TracingLevel: " + tracingLevel.name());
     }
 }

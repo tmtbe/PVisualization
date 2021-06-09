@@ -7,8 +7,10 @@ import com.alibaba.jvm.sandbox.api.annotation.Command;
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
 import com.alibaba.jvm.sandbox.api.resource.ModuleManager;
 import com.tmtbe.pvisual.core.DynamicWatch;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.support.ParamSupported;
 import com.tmtbe.pvisual.core.trace.TraceConfig;
+import com.tmtbe.pvisual.core.trace.TracingLevel;
 import org.kohsuke.MetaInfServices;
 
 import javax.annotation.Resource;
@@ -57,9 +59,16 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
         String endpoint = "http://{0}:{1}/api/v2/spans";
         String host = param.getOrDefault("host", "localhost");
         String port = param.getOrDefault("port", "9411");
+        int level = Integer.parseInt(param.getOrDefault("level", "0"));
         TraceConfig traceConfig = new TraceConfig();
         traceConfig.setZipkinEndPoint(MessageFormat.format(endpoint, host, port));
         traceConfig.setLocalServiceName(param.getOrDefault("name", "Demo"));
+        try {
+            traceConfig.setTracingLevel(TracingLevel.nameOf(level));
+        } catch (PTraceException e) {
+            writer.println(e.getMessage());
+            return;
+        }
         pVisualManager.enhance(writer, traceConfig);
     }
 

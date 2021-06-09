@@ -5,8 +5,8 @@ import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.support.ExConsumer;
 import com.tmtbe.pvisual.core.trace.PTracer;
+import com.tmtbe.pvisual.core.trace.TracingLevel;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -16,10 +16,11 @@ import java.util.function.Consumer;
 
 @Slf4j
 public abstract class PWatch implements RemoveHandle {
-    @Setter
+    protected TracingLevel tracingLevel;
     protected PVisualWatcherManager pVisualWatcherManager;
     @Getter
     protected PAdviceListener adviceListener = new PAdviceListener(this);
+
 
     /**
      * 没有异常则认为Check状态是通过的
@@ -127,5 +128,10 @@ public abstract class PWatch implements RemoveHandle {
             index++;
         }
         span.tag("stackTrace", StringUtils.join(stack, "\n"));
+    }
+
+    public void setPVisualWatcherManager(PVisualWatcherManager pVisualWatcherManager) {
+        this.pVisualWatcherManager = pVisualWatcherManager;
+        this.tracingLevel = pVisualWatcherManager.getTraceConfig().getTracingLevel();
     }
 }
