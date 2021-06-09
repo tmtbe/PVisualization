@@ -7,6 +7,7 @@ import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
 import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.support.ProgressPrinter;
 import com.tmtbe.pvisual.core.thread.*;
+import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.trace.TraceConfig;
 import lombok.Getter;
 
@@ -103,6 +104,7 @@ public abstract class PVisualWatcherManager {
         }
         watchDataMap.forEach((watchName, watchData) -> watchData.delete(moduleEventWatcher, printer));
         watchDataMap.clear();
+        PTracer.clear();
         isEnhance = false;
     }
 }

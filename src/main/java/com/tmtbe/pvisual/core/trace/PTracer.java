@@ -26,7 +26,8 @@ public class PTracer {
     private static final ConcurrentHashMap<Tracer, LinkedList<Span>> tracerSpanMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, Tracer> tracerMap = new ConcurrentHashMap<>();
     private static final TransmittableThreadLocal<PTracer> parentThreadLocal = new TransmittableThreadLocal<>();
-    private static final ConcurrentHashMap<Long, HashMap<Object, Span>> spanTagMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, HashMap<Object, Span>> traceIdTagSpanMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Object, Long> tagTraceIdMap = new ConcurrentHashMap<>();
     @Getter
     private final Tracer tracer;
     @Getter
@@ -84,7 +85,8 @@ public class PTracer {
             return null;
         });
         tracerMap.remove(traceId);
-        spanTagMap.remove(traceId);
+        HashMap<Object, Span> tagSpan = traceIdTagSpanMap.remove(traceId);
+        tagSpan.keySet().forEach(tagTraceIdMap::remove);
         parentThreadLocal.set(null);
     }
 
@@ -112,17 +114,29 @@ public class PTracer {
     }
 
     public static void setSpanWithTag(@NonNull Span span, @NonNull Object tag) {
-        spanTagMap.compute(span.context().traceId(), (k, v) -> {
+        traceIdTagSpanMap.compute(span.context().traceId(), (k, v) -> {
             if (v == null) {
                 v = new HashMap<>();
             }
             v.put(tag, span);
             return v;
         });
+        tagTraceIdMap.put(tag, span.context().traceId());
     }
 
-    public static Span getSpanWithTag(long traceId, @NonNull Object tag) {
-        HashMap<Object, Span> tagSpanHashMap = spanTagMap.get(traceId);
-        return tagSpanHashMap.get(tag);
+    public static Span getAndRemoveSpanWithTag(@NonNull Object tag) {
+        Long traceId = tagTraceIdMap.remove(tag);
+        if (traceId == null) return null;
+        HashMap<Object, Span> tagSpanHashMap = traceIdTagSpanMap.get(traceId);
+        return tagSpanHashMap.remove(tag);
+    }
+
+    public static void clear() {
+        tracerMap.clear();
+        tracerSpanMap.clear();
+        tracingMap.clear();
+        parentThreadLocal.set(null);
+        traceIdTagSpanMap.clear();
+        tagTraceIdMap.clear();
     }
 }
