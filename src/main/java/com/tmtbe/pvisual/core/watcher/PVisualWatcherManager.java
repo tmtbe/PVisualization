@@ -104,6 +104,7 @@ public abstract class PVisualWatcherManager {
             }
             prepare0();
             prepare();
+            PTracer.clear();
             watchDataMap.values().forEach(WatchData::run);
             this.isEnhance = true;
         });
