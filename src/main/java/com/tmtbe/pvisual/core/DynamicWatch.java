@@ -31,7 +31,8 @@ public class DynamicWatch extends PWatch {
     }
 
     @Override
-    protected void checking() throws Throwable {
+    protected void checking(ClassLoader classLoader) throws Throwable {
 
     }
+
 }

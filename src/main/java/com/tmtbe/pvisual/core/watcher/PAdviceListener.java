@@ -19,13 +19,14 @@ public class PAdviceListener extends AdviceListener {
     /**
      * 检查是否满足条件，满足会执行runnable
      *
-     * @param runnable runnable
+     * @param classLoader classLoader
+     * @param runnable    runnable
      */
     @SneakyThrows
-    public void check(@NonNull ExRunnable runnable) {
+    public void check(@NonNull ClassLoader classLoader, @NonNull ExRunnable runnable) {
         if (isCheckSuccess == null) {
             try {
-                pWatch.checking();
+                pWatch.checking(classLoader);
                 isCheckSuccess = true;
             } catch (Throwable e) {
                 isCheckSuccess = false;
@@ -37,24 +38,13 @@ public class PAdviceListener extends AdviceListener {
         }
     }
 
-    /**
-     * 尝试进行Check
-     */
-    public void tryCheck() {
-        try {
-            pWatch.checking();
-            isCheckSuccess = true;
-        } catch (Throwable e) {
-        }
-    }
-
     @Override
     protected void before(Advice advice) throws Throwable {
-        check(() -> pWatch.before(advice));
+        check(advice.getLoader(), () -> pWatch.before(advice));
     }
 
     @Override
     protected void after(Advice advice) throws Throwable {
-        check(() -> pWatch.after(advice));
+        check(advice.getLoader(), () -> pWatch.after(advice));
     }
 }

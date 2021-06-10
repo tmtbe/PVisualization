@@ -62,7 +62,6 @@ public abstract class PVisualWatcherManager {
             return null;
         }
         pWatch.setPVisualWatcherManager(this);
-        pWatch.adviceListener.tryCheck();
         WatchData watchData = new WatchData();
         watchData.setPWatch(pWatch);
         watchData.setName(pWatch.getName());
@@ -84,7 +83,6 @@ public abstract class PVisualWatcherManager {
     }
 
     public void dynamicAdd(PWatch pWatch) throws Throwable {
-        pWatch.checking();
         if (this.traceConfig == null) {
             throw new PTraceException("TraceConfig is not exist");
         }

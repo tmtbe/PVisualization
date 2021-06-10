@@ -52,7 +52,7 @@ public abstract class PWatch implements RemoveHandle {
      *
      * @throws Throwable Throwable
      */
-    protected abstract void checking() throws Throwable;
+    protected abstract void checking(ClassLoader classLoader) throws Throwable;
 
 
     public String getName() {
@@ -123,8 +123,8 @@ public abstract class PWatch implements RemoveHandle {
     }
 
 
-    protected Class<?> getBClass(String className) throws ClassNotFoundException {
-        return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+    protected Class<?> getBusinessClass(String className, ClassLoader classLoader) throws ClassNotFoundException {
+        return Class.forName(className, true, classLoader);
     }
 
     protected void addStackTrace(Span span) {

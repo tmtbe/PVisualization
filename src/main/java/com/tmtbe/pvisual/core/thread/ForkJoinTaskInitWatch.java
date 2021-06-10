@@ -24,8 +24,7 @@ public class ForkJoinTaskInitWatch extends PWatch {
                 .build();
     }
 
-    @Override
-    protected void checking() throws Throwable {
+    protected void checking(ClassLoader classLoader) throws Throwable {
 
     }
 

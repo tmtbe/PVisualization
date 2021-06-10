@@ -24,15 +24,16 @@ public class HttpServletWatch extends PWatch {
                 .className("javax.servlet.http.HttpServlet")
                 .behaviorName("service")
                 .patternType(EventWatchBuilder.PatternType.REGEX)
-                .buildingForBehavior((t) -> t.withAccess(Modifier.PROTECTED))
+                .buildingForBehavior((t) -> t.withAccess(Modifier.PROTECTED)
+                        .withParameterTypes("javax.servlet.http.HttpServletRequest", "javax.servlet.http.HttpServletResponse"))
                 .buildingForClass((t) -> {
                 })
                 .build();
     }
 
     @Override
-    protected void checking() throws Throwable {
-        Class<?> httpServletRequestClass = getBClass("javax.servlet.http.HttpServletRequest");
+    protected void checking(ClassLoader classLoader) throws Throwable {
+        Class<?> httpServletRequestClass = getBusinessClass("javax.servlet.http.HttpServletRequest", classLoader);
         getMethod = httpServletRequestClass.getDeclaredMethod("getMethod");
     }
 
@@ -41,7 +42,7 @@ public class HttpServletWatch extends PWatch {
     protected void before(Advice advice) throws Throwable {
         startSpan(advice, span -> {
             span.kind(Span.Kind.SERVER);
-            //span.name((String) getMethod.invoke(advice.getParameterArray()[0]));
+            span.name((String) getMethod.invoke(advice.getParameterArray()[0]));
             addStackTrace(span);
         });
     }
