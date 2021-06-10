@@ -64,6 +64,7 @@ public abstract class PVisualWatcherManager {
         pWatch.setPVisualWatcherManager(this);
         pWatch.adviceListener.tryCheck();
         WatchData watchData = new WatchData();
+        watchData.setPWatch(pWatch);
         watchData.setName(pWatch.getName());
         watchData.setRunnable(() -> {
             EventWatchBuilder.IBuildingForClass iBuildingForClass = new EventWatchBuilder(moduleEventWatcher, pWatch.getWatchConfig().getPatternType())
@@ -78,7 +79,6 @@ public abstract class PVisualWatcherManager {
             }
             watchData.setWatchId(iBuildingForWatching.onWatch(pWatch.adviceListener).getWatchId());
         });
-        watchData.setRemoveHandle(pWatch);
         watchDataMap.put(watchData.getName(), watchData);
         return watchData;
     }
@@ -101,14 +101,18 @@ public abstract class PVisualWatcherManager {
     public void enhance(final PrintWriter writer, TraceConfig traceConfig) {
         runInLock(writer, () -> {
             this.traceConfig = traceConfig;
-            traceConfig.print();
             if (writer != null) {
                 setPrinter(new ConcurrentLinkedQueuePrinter(writer));
+                traceConfig.print(printer);
             }
             prepare0();
             prepare();
             PTracer.clear();
-            watchDataMap.values().forEach(WatchData::run);
+            watchDataMap.values().forEach((watchData) -> {
+                //用于更新配置
+                watchData.getPWatch().setPVisualWatcherManager(this);
+                watchData.run();
+            });
             this.isEnhance = true;
         });
     }

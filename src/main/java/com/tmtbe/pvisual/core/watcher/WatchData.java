@@ -9,8 +9,8 @@ import lombok.Data;
 public class WatchData {
     private String name;
     private Runnable runnable;
+    private PWatch pWatch;
     private Integer watchId;
-    private RemoveHandle removeHandle;
 
     public void run() {
         if (!isRunning()) {
@@ -23,7 +23,7 @@ public class WatchData {
     }
 
     public void delete(ModuleEventWatcher moduleEventWatcher, Printer printer) {
-        removeHandle.onRemove(this);
+        pWatch.onRemove(this);
         if (isRunning()) {
             if (printer != null) {
                 moduleEventWatcher.delete(getWatchId(), new ProgressPrinter(printer, name));
