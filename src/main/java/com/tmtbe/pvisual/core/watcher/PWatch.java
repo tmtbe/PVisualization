@@ -12,15 +12,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.function.Consumer;
 
 @Slf4j
 public abstract class PWatch implements RemoveHandle {
+    protected WatchConfig watchConfig;
     protected TracingLevel tracingLevel;
     protected PVisualWatcherManager pVisualWatcherManager;
     @Getter
     protected PAdviceListener adviceListener = new PAdviceListener(this);
+    protected boolean isTraceRoot = false;
 
+    public PWatch() {
+        watchConfig = getWatchConfig();
+    }
+
+    protected WatchConfig getWatchConfig() {
+        return WatchConfig.builder().build();
+    }
 
     /**
      * 没有异常则认为Check状态是通过的
@@ -53,26 +61,23 @@ public abstract class PWatch implements RemoveHandle {
         return advice.attachment();
     }
 
-    protected void startSpan(Advice advice, Consumer<Span> handler) {
-        Context context = new Context();
-        advice.attach(context);
+    @SneakyThrows
+    protected void startSpan(Advice advice, ExConsumer<Span> handler) {
         PTracer parent = PTracer.getParent();
-        //保存当前PTracer
-        context.setPTracer(parent);
         if (parent != null) {
-            Span span = PTracer.startSpan(parent.getTracer(), parent.getSpan().context());
-            context.setSpan(span);
-            addStackTrace(span);
-            //用Span设置新的PTracer
-            PTracer.setParent(new PTracer(parent.getTracer(), span));
-            if (handler != null) {
-                handler.accept(span);
+            Span span = PTracer.startSpan(pVisualWatcherManager, watchConfig.getServiceName(), parent.getSpan().context());
+            startSpan(advice, span, handler);
+        } else {
+            if (watchConfig.isCanCreateTrace()) {
+                Span traceSpan = PTracer.startTracerSpan(pVisualWatcherManager, watchConfig.getServiceName());
+                startSpan(advice, traceSpan, handler);
+                isTraceRoot = true;
             }
         }
     }
 
     @SneakyThrows
-    protected void startSpan(Advice advice, Span span, ExConsumer<Span> handler) {
+    private void startSpan(Advice advice, Span span, ExConsumer<Span> handler) {
         Context context = new Context();
         advice.attach(context);
         PTracer parent = PTracer.getParent();
@@ -81,7 +86,7 @@ public abstract class PWatch implements RemoveHandle {
         context.setSpan(span);
         addStackTrace(span);
         //用Span设置新的PTracer
-        PTracer.setParent(new PTracer(PTracer.getTracing(pVisualWatcherManager).tracer(), span));
+        PTracer.setParent(new PTracer(span));
         if (handler != null) {
             handler.accept(span);
         }
@@ -97,6 +102,9 @@ public abstract class PWatch implements RemoveHandle {
                 handler.accept(span);
             }
             PTracer.finishSpan(span);
+            if (isTraceRoot) {
+                PTracer.finishTracer(span.context().traceId());
+            }
         }
         //恢复之前保存的PTracer
         PTracer.setParent(context.getPTracer());
@@ -137,5 +145,8 @@ public abstract class PWatch implements RemoveHandle {
     public void setPVisualWatcherManager(PVisualWatcherManager pVisualWatcherManager) {
         this.pVisualWatcherManager = pVisualWatcherManager;
         this.tracingLevel = pVisualWatcherManager.getTraceConfig().getTracingLevel();
+        if (StringUtils.isEmpty(watchConfig.getServiceName())) {
+            watchConfig.setServiceName(pVisualWatcherManager.getTraceConfig().getLocalServiceName());
+        }
     }
 }

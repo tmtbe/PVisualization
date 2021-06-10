@@ -23,13 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @AllArgsConstructor
 public class PTracer {
     private static final ConcurrentHashMap<String, Tracing> tracingMap = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Tracer, LinkedList<Span>> tracerSpanMap = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Long, Tracer> tracerMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, LinkedList<Span>> traceIdSpanMap = new ConcurrentHashMap<>();
     private static final TransmittableThreadLocal<PTracer> parentThreadLocal = new TransmittableThreadLocal<>();
     private static final ConcurrentHashMap<Long, HashMap<Object, Span>> traceIdTagSpanMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Object, Long> tagTraceIdMap = new ConcurrentHashMap<>();
-    @Getter
-    private final Tracer tracer;
     @Getter
     private final Span span;
 
@@ -42,17 +39,21 @@ public class PTracer {
     }
 
     @SneakyThrows
-    public static Tracing getTracing(PVisualWatcherManager pVisualWatcherManager) {
+    private static Tracing getTracing(PVisualWatcherManager pVisualWatcherManager, String serviceName) {
         String localServiceName = pVisualWatcherManager.getTraceConfig().getLocalServiceName();
         String zipkinEndPoint = pVisualWatcherManager.getTraceConfig().getZipkinEndPoint();
         if (StringUtils.isAnyEmpty(localServiceName, zipkinEndPoint)) {
             throw new PTraceException("Trace Config is not setting");
         }
-        return tracingMap.compute(localServiceName + zipkinEndPoint, (k, v) -> {
+        if (serviceName == null) {
+            serviceName = localServiceName;
+        }
+        String finalServiceName = serviceName;
+        return tracingMap.compute(finalServiceName + zipkinEndPoint, (k, v) -> {
             if (v == null) {
                 OkHttpSender sender = OkHttpSender.newBuilder().endpoint(zipkinEndPoint).build();
                 AsyncReporter<zipkin2.Span> reporter = AsyncReporter.builder(sender).build();
-                v = Tracing.newBuilder().localServiceName(localServiceName)
+                v = Tracing.newBuilder().localServiceName(finalServiceName)
                         .traceId128Bit(false)
                         .addSpanHandler(ZipkinSpanHandler.newBuilder(reporter).build())
                         .build();
@@ -61,38 +62,33 @@ public class PTracer {
         });
     }
 
-    public static Span startTracerSpan(PVisualWatcherManager pVisualWatcherManager) {
-        Tracer tracer = getTracing(pVisualWatcherManager).tracer();
+    public static Span startTracerSpan(PVisualWatcherManager pVisualWatcherManager, String serviceName) {
+        Tracer tracer = getTracing(pVisualWatcherManager, serviceName).tracer();
         Span span = tracer.newTrace();
         span.start();
-        tracerMap.putIfAbsent(span.context().traceId(), tracer);
-        parentThreadLocal.set(new PTracer(tracer, span));
+        parentThreadLocal.set(new PTracer(span));
         return span;
     }
 
-    public static Tracer getTracer(long traceId) {
-        return tracerMap.get(traceId);
-    }
-
     public static void finishTracer(long traceId) {
-        Tracer tracer = getTracer(traceId);
-        if (tracer == null) return;
-        tracerSpanMap.compute(tracer, (k, v) -> {
+        traceIdSpanMap.compute(traceId, (k, v) -> {
             if (v != null) {
-                LinkedList<Span> spans = tracerSpanMap.get(tracer);
+                LinkedList<Span> spans = traceIdSpanMap.get(traceId);
                 spans.forEach(Span::finish);
             }
             return null;
         });
-        tracerMap.remove(traceId);
         HashMap<Object, Span> tagSpan = traceIdTagSpanMap.remove(traceId);
-        tagSpan.keySet().forEach(tagTraceIdMap::remove);
+        if (tagSpan != null) {
+            tagSpan.keySet().forEach(tagTraceIdMap::remove);
+        }
         parentThreadLocal.set(null);
     }
 
-    public static Span startSpan(@NonNull Tracer tracer, @NonNull TraceContext traceContext) {
+    public static Span startSpan(@NonNull PVisualWatcherManager pVisualWatcherManager, String serviceName, @NonNull TraceContext traceContext) {
+        Tracer tracer = getTracing(pVisualWatcherManager, serviceName).tracer();
         Span span = tracer.newChild(traceContext);
-        tracerSpanMap.compute(tracer, (k, v) -> {
+        traceIdSpanMap.compute(traceContext.traceId(), (k, v) -> {
             if (v == null) {
                 v = new LinkedList<>();
             }
@@ -101,12 +97,6 @@ public class PTracer {
         });
         span.start();
         return span;
-    }
-
-    public static Span startSpan(long traceId, @NonNull TraceContext traceContext) {
-        Tracer tracer = getTracer(traceId);
-        if (tracer == null) return null;
-        return startSpan(tracer, traceContext);
     }
 
     public static void finishSpan(@NonNull Span span) {
@@ -132,8 +122,7 @@ public class PTracer {
     }
 
     public static void clear() {
-        tracerMap.clear();
-        tracerSpanMap.clear();
+        traceIdSpanMap.clear();
         tracingMap.clear();
         parentThreadLocal.set(null);
         traceIdTagSpanMap.clear();

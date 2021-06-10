@@ -1,4 +1,4 @@
-package com.tmtbe.pvisual.springboot;
+package com.tmtbe.pvisual.universal;
 
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.watcher.PWatch;

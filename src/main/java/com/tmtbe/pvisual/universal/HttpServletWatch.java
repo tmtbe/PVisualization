@@ -1,16 +1,21 @@
-package com.tmtbe.pvisual.springboot;
+package com.tmtbe.pvisual.universal;
 
 import brave.Span;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
-import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class HttpServletWatch extends PWatch {
     protected Method getMethod;
+
+    @Override
+    protected WatchConfig getWatchConfig() {
+        return WatchConfig.builder().canCreateTrace(true).serviceName("Servlet").build();
+    }
 
     @Override
     protected void checking() throws Throwable {
@@ -40,17 +45,10 @@ public class HttpServletWatch extends PWatch {
 
     @Override
     protected void before(Advice advice) throws Throwable {
-        Span traceSpan = PTracer.startTracerSpan(pVisualWatcherManager);
-        startSpan(advice, traceSpan, span -> {
+        startSpan(advice, span -> {
             span.kind(Span.Kind.SERVER);
-            span.name((String) getMethod.invoke(advice.getParameterArray()[0]));
-            span.tag("getModifiers", advice.getBehavior().getModifiers() + "");
+            //span.name((String) getMethod.invoke(advice.getParameterArray()[0]));
             addStackTrace(span);
         });
-    }
-
-    @Override
-    protected void after(Advice advice) throws Throwable {
-        finishSpan(advice, null);
     }
 }
