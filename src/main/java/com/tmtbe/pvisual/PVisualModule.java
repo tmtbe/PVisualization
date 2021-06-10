@@ -80,8 +80,8 @@ public class PVisualModule extends ParamSupported implements Module, ModuleLifec
     @Command("add")
     public void add(final Map<String, String> param, final PrintWriter writer) {
         String name = param.get("n");
-        DynamicWatch dynamicWatch = new DynamicWatch(name);
         try {
+            DynamicWatch dynamicWatch = new DynamicWatch(name);
             pVisualManager.dynamicAdd(dynamicWatch);
         } catch (Throwable e) {
             writer.println(e.getMessage());

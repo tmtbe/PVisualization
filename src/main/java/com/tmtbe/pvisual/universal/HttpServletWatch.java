@@ -3,6 +3,7 @@ package com.tmtbe.pvisual.universal;
 import brave.Span;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
 import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
@@ -12,9 +13,21 @@ import java.lang.reflect.Modifier;
 public class HttpServletWatch extends PWatch {
     protected Method getMethod;
 
+    public HttpServletWatch() throws PTraceException {
+    }
+
     @Override
-    protected WatchConfig getWatchConfig() {
-        return WatchConfig.builder().canCreateTrace(true).serviceName("Servlet").build();
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .canCreateTrace(true)
+                .serviceName("Servlet")
+                .className("javax.servlet.http.HttpServlet")
+                .behaviorName("service")
+                .patternType(EventWatchBuilder.PatternType.REGEX)
+                .buildingForBehavior((t) -> t.withAccess(Modifier.PROTECTED))
+                .buildingForClass((t) -> {
+                })
+                .build();
     }
 
     @Override
@@ -23,25 +36,6 @@ public class HttpServletWatch extends PWatch {
         getMethod = httpServletRequestClass.getDeclaredMethod("getMethod");
     }
 
-    @Override
-    public String getWatchClassName() {
-        return "javax.servlet.http.HttpServlet";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "service";
-    }
-
-    @Override
-    public void buildingForBehavior(EventWatchBuilder.IBuildingForBehavior iBuildingForBehavior) {
-        iBuildingForBehavior.withAccess(Modifier.PROTECTED);
-    }
-
-    @Override
-    public void buildingForClass(EventWatchBuilder.IBuildingForClass iBuildingForClass) {
-        // 默认会includeSubClasses，导致会有2个Trace这里重写下。
-    }
 
     @Override
     protected void before(Advice advice) throws Throwable {

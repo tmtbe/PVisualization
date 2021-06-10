@@ -1,27 +1,28 @@
 package com.tmtbe.pvisual.universal;
 
+import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
 import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
 public class SqlWatch extends PWatch {
 
+    public SqlWatch() throws PTraceException {
+    }
+
     @Override
-    protected WatchConfig getWatchConfig() {
-        return WatchConfig.builder().serviceName("DB").build();
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .canCreateTrace(true)
+                .serviceName("DB")
+                .className("java.sql.Connection")
+                .behaviorName("prepareStatement")
+                .patternType(EventWatchBuilder.PatternType.REGEX)
+                .build();
     }
 
     @Override
     protected void checking() throws Throwable {
 
-    }
-
-    @Override
-    public String getWatchClassName() {
-        return "java.sql.Connection";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "prepareStatement";
     }
 }

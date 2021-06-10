@@ -1,6 +1,7 @@
 package com.tmtbe.pvisual;
 
 import com.alibaba.jvm.sandbox.api.resource.ModuleEventWatcher;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PVisualWatcherManager;
 import com.tmtbe.pvisual.universal.DemoWatch;
 import com.tmtbe.pvisual.universal.HttpServletWatch;
@@ -13,7 +14,7 @@ public class PVisualManager extends PVisualWatcherManager {
     }
 
     @Override
-    protected void prepare() {
+    protected void prepare() throws PTraceException {
         add(new HttpServletWatch());
         add(new SqlWatch());
         add(new PreparedStatementWatch());

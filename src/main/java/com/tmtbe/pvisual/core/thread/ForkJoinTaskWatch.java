@@ -3,22 +3,25 @@ package com.tmtbe.pvisual.core.thread;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.alibaba.ttl.spi.TtlEnhanced;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
 public class ForkJoinTaskWatch extends PWatch {
+    public ForkJoinTaskWatch() throws PTraceException {
+    }
+
+    @Override
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .className("java.util.concurrent.ForkJoinTask")
+                .behaviorName("doExec")
+                .build();
+    }
+
     @Override
     protected void checking() throws Throwable {
 
-    }
-
-    @Override
-    public String getWatchClassName() {
-        return "java.util.concurrent.ForkJoinTask";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "doExec";
     }
 
     @Override

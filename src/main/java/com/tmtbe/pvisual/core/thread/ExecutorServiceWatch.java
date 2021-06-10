@@ -3,25 +3,28 @@ package com.tmtbe.pvisual.core.thread;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.ttl.TtlCallable;
 import com.alibaba.ttl.TtlRunnable;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceWatch extends PWatch {
+    public ExecutorServiceWatch() throws PTraceException {
+    }
+
+    @Override
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .className("java.util.concurrent.ExecutorService")
+                .behaviorName("submit|invokeAll|invokeAny")
+                .build();
+    }
+
     @Override
     protected void checking() throws Throwable {
 
-    }
-
-    @Override
-    public String getWatchClassName() {
-        return "java.util.concurrent.ExecutorService";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "submit|invokeAll|invokeAny";
     }
 
     @Override

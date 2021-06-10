@@ -3,7 +3,9 @@ package com.tmtbe.pvisual.core.thread;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.alibaba.ttl.spi.TtlEnhanced;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchConfig;
 import com.tmtbe.pvisual.core.watcher.WatchData;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
@@ -11,19 +13,20 @@ public class ForkJoinTaskInitWatch extends PWatch {
     static final ConcurrentReferenceHashMap<Object, Object> captureMap
             = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
+    public ForkJoinTaskInitWatch() throws PTraceException {
+    }
+
+    @Override
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .className("java.util.concurrent.ForkJoinTask")
+                .behaviorName("<init>")
+                .build();
+    }
+
     @Override
     protected void checking() throws Throwable {
 
-    }
-
-    @Override
-    public String getWatchClassName() {
-        return "java.util.concurrent.ForkJoinTask";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "<init>";
     }
 
     @Override

@@ -4,6 +4,7 @@ import brave.Span;
 import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.support.ExConsumer;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.trace.TracingLevel;
 import lombok.Getter;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 
 @Slf4j
 public abstract class PWatch implements RemoveHandle {
+    @Getter
     protected WatchConfig watchConfig;
     protected TracingLevel tracingLevel;
     protected PVisualWatcherManager pVisualWatcherManager;
@@ -22,13 +24,28 @@ public abstract class PWatch implements RemoveHandle {
     protected PAdviceListener adviceListener = new PAdviceListener(this);
     protected boolean isTraceRoot = false;
 
-    public PWatch() {
-        watchConfig = getWatchConfig();
+    public PWatch() throws PTraceException {
+        watchConfig = createWatchConfig();
+        if (StringUtils.isAnyEmpty(watchConfig.getClassName(), watchConfig.getBehaviorName())) {
+            throw new PTraceException("watch class name & watch behavior name can not empty!");
+        }
+        if (watchConfig.getPatternType() == null) {
+            watchConfig.setPatternType(EventWatchBuilder.PatternType.REGEX);
+        }
+        if (watchConfig.getBuildingForWatching() == null) {
+            watchConfig.setBuildingForWatching((t) -> {
+            });
+        }
+        if (watchConfig.getBuildingForBehavior() == null) {
+            watchConfig.setBuildingForBehavior((t) -> {
+            });
+        }
+        if (watchConfig.getBuildingForClass() == null) {
+            watchConfig.setBuildingForClass((t) -> t.includeSubClasses().includeBootstrap());
+        }
     }
 
-    protected WatchConfig getWatchConfig() {
-        return WatchConfig.builder().build();
-    }
+    protected abstract WatchConfig createWatchConfig();
 
     /**
      * 没有异常则认为Check状态是通过的
@@ -37,24 +54,9 @@ public abstract class PWatch implements RemoveHandle {
      */
     protected abstract void checking() throws Throwable;
 
-    public abstract String getWatchClassName();
-
-    public abstract String getWatchMethodName();
-
-    public void buildingForClass(EventWatchBuilder.IBuildingForClass iBuildingForClass) {
-        iBuildingForClass.includeSubClasses().includeBootstrap();
-    }
-
-    public void buildingForBehavior(EventWatchBuilder.IBuildingForBehavior iBuildingForBehavior) {
-
-    }
-
-    public void buildingForWatching(EventWatchBuilder.IBuildingForWatching iBuildingForWatching) {
-
-    }
 
     public String getName() {
-        return getWatchClassName() + ":" + getWatchMethodName();
+        return watchConfig.getName();
     }
 
     protected Context getContext(Advice advice) {
@@ -120,9 +122,6 @@ public abstract class PWatch implements RemoveHandle {
         finishSpan(advice, null);
     }
 
-    public EventWatchBuilder.PatternType getPatternType() {
-        return EventWatchBuilder.PatternType.REGEX;
-    }
 
     protected Class<?> getBClass(String className) throws ClassNotFoundException {
         return Class.forName(className, true, Thread.currentThread().getContextClassLoader());

@@ -1,26 +1,27 @@
 package com.tmtbe.pvisual.universal;
 
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
+import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
+import com.tmtbe.pvisual.core.watcher.WatchConfig;
 
 public class DemoWatch extends PWatch {
+
+    public DemoWatch() throws PTraceException {
+    }
+
+    @Override
+    protected WatchConfig createWatchConfig() {
+        return WatchConfig.builder()
+                .serviceName("demo")
+                .className("com.example.demo.*")
+                .behaviorName("*")
+                .patternType(EventWatchBuilder.PatternType.WILDCARD)
+                .build();
+    }
+
     @Override
     protected void checking() throws Throwable {
 
-    }
-
-    @Override
-    public String getWatchClassName() {
-        return "com.example.demo.*";
-    }
-
-    @Override
-    public String getWatchMethodName() {
-        return "*";
-    }
-
-    @Override
-    public EventWatchBuilder.PatternType getPatternType() {
-        return EventWatchBuilder.PatternType.WILDCARD;
     }
 }

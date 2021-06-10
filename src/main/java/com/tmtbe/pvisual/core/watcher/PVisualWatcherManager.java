@@ -34,14 +34,17 @@ public abstract class PVisualWatcherManager {
     @SneakyThrows
     protected void runInLock(final PrintWriter writer, ExRunnable runnable) {
         if (semaphore.tryAcquire()) {
-            runnable.run();
-            semaphore.release();
+            try {
+                runnable.run();
+            } finally {
+                semaphore.release();
+            }
         } else {
             writer.println("Task is occupied, please wait.");
         }
     }
 
-    protected void prepare0() {
+    protected void prepare0() throws PTraceException {
         add(new ExecutorServiceWatch());
         add(new ExecutorWatch());
         add(new ForkJoinTaskWatch());
@@ -63,13 +66,13 @@ public abstract class PVisualWatcherManager {
         WatchData watchData = new WatchData();
         watchData.setName(pWatch.getName());
         watchData.setRunnable(() -> {
-            EventWatchBuilder.IBuildingForClass iBuildingForClass = new EventWatchBuilder(moduleEventWatcher, pWatch.getPatternType())
-                    .onClass(pWatch.getWatchClassName());
-            pWatch.buildingForClass(iBuildingForClass);
-            EventWatchBuilder.IBuildingForBehavior iBuildingForBehavior = iBuildingForClass.onBehavior(pWatch.getWatchMethodName());
-            pWatch.buildingForBehavior(iBuildingForBehavior);
+            EventWatchBuilder.IBuildingForClass iBuildingForClass = new EventWatchBuilder(moduleEventWatcher, pWatch.getWatchConfig().getPatternType())
+                    .onClass(pWatch.watchConfig.getClassName());
+            pWatch.watchConfig.getBuildingForClass().accept(iBuildingForClass);
+            EventWatchBuilder.IBuildingForBehavior iBuildingForBehavior = iBuildingForClass.onBehavior(pWatch.getWatchConfig().getBehaviorName());
+            pWatch.watchConfig.getBuildingForBehavior().accept(iBuildingForBehavior);
             EventWatchBuilder.IBuildingForWatching iBuildingForWatching = iBuildingForBehavior.onWatching();
-            pWatch.buildingForWatching(iBuildingForWatching);
+            pWatch.watchConfig.getBuildingForWatching().accept(iBuildingForWatching);
             if (printer != null) {
                 iBuildingForWatching.withProgress(new ProgressPrinter(printer, pWatch.getName()));
             }
@@ -92,7 +95,7 @@ public abstract class PVisualWatcherManager {
         watchData.run();
     }
 
-    protected abstract void prepare();
+    protected abstract void prepare() throws PTraceException;
 
     @SneakyThrows
     public void enhance(final PrintWriter writer, TraceConfig traceConfig) {
