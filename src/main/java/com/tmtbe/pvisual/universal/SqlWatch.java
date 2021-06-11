@@ -1,5 +1,6 @@
 package com.tmtbe.pvisual.universal;
 
+import com.alibaba.jvm.sandbox.api.listener.ext.Advice;
 import com.alibaba.jvm.sandbox.api.listener.ext.EventWatchBuilder;
 import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.watcher.PWatch;
@@ -23,5 +24,15 @@ public class SqlWatch extends PWatch {
 
     protected void checking(ClassLoader classLoader) throws Throwable {
 
+    }
+
+    @Override
+    protected void before(Advice advice) throws Throwable {
+        startSpan(advice, span -> {
+            span.name(advice.getTarget().getClass().getSimpleName() + ":" + advice.getBehavior().getName());
+            if (advice.getParameterArray().length > 0) {
+                span.tag("sql", advice.getParameterArray()[0].toString());
+            }
+        });
     }
 }

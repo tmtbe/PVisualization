@@ -70,13 +70,23 @@ public abstract class PWatch implements RemoveHandle {
         PTracer parent = PTracer.getParent();
         if (parent != null) {
             Span span = PTracer.startSpan(pVisualWatcherManager, watchConfig.getServiceName(), parent.getSpan().context());
+            setSpanName(advice, span);
             startSpan(advice, span, handler);
         } else {
             if (watchConfig.isCanCreateTrace()) {
                 Span traceSpan = PTracer.startTracerSpan(pVisualWatcherManager, watchConfig.getServiceName());
+                setSpanName(advice, traceSpan);
                 startSpan(advice, traceSpan, handler);
                 isTraceRoot = true;
             }
+        }
+    }
+
+    protected void setSpanName(Advice advice, Span span) {
+        if (advice.getTarget() != null) {
+            span.name(advice.getTarget().getClass().getSimpleName() + ":" + advice.getBehavior().getName());
+        } else {
+            span.name(advice.getBehavior().getName());
         }
     }
 
@@ -117,9 +127,7 @@ public abstract class PWatch implements RemoveHandle {
     }
 
     protected void before(Advice advice) throws Throwable {
-        startSpan(advice, span -> {
-            span.name(advice.getTarget().getClass().getSimpleName() + ":" + advice.getBehavior().getName());
-        });
+        startSpan(advice, null);
     }
 
     protected void after(Advice advice) throws Throwable {
