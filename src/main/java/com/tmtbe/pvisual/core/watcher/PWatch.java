@@ -12,6 +12,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 
 @Slf4j
@@ -87,6 +89,7 @@ public abstract class PWatch implements RemoveHandle {
         context.setPTracer(parent);
         context.setSpan(span);
         addStackTrace(span);
+        addAdviceBeforeInfo(span, advice);
         //用Span设置新的PTracer
         PTracer.setParent(new PTracer(span));
         if (handler != null) {
@@ -100,6 +103,7 @@ public abstract class PWatch implements RemoveHandle {
         if (context == null) return;
         Span span = context.getSpan();
         if (span != null) {
+            addAdviceAfterInfo(span, advice);
             if (handler != null) {
                 handler.accept(span);
             }
@@ -138,6 +142,33 @@ public abstract class PWatch implements RemoveHandle {
                 index++;
             }
             span.tag("stackTrace", StringUtils.join(stack, "\n"));
+        }
+    }
+
+    private void addAdviceBeforeInfo(Span span, Advice advice) {
+
+    }
+
+    private void addAdviceAfterInfo(Span span, Advice advice) {
+        if (tracingLevel.getLevel() > TracingLevel.PERFORMANCE.getLevel()) {
+            if (advice.isThrows()) {
+                span.error(advice.getThrowable());
+                if (advice.getThrowable().getCause() != null) {
+                    span.tag("error-message", advice.getThrowable().getCause().getMessage());
+                } else {
+                    span.tag("error-message", advice.getThrowable().getMessage());
+                }
+                if (tracingLevel.getLevel() > TracingLevel.NORMAL.getLevel()) {
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    advice.getThrowable().printStackTrace(pw);
+                    if (advice.getThrowable().getCause() != null) {
+                        pw.println("Cause by: " + advice.getThrowable().getCause().getMessage());
+                        advice.getThrowable().getCause().printStackTrace(pw);
+                    }
+                    span.tag("error-stackTrace", sw.toString());
+                }
+            }
         }
     }
 
