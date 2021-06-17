@@ -5,11 +5,10 @@ import com.tmtbe.pvisual.core.support.PTraceException;
 import com.tmtbe.pvisual.core.trace.PTracer;
 import com.tmtbe.pvisual.core.watcher.PWatch;
 import com.tmtbe.pvisual.core.watcher.WatchConfig;
-
-import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.util.ConcurrentReferenceHashMap;
 
 public class SubscriberInitWatch extends PWatch {
-    public static ConcurrentHashMap<Object, PTracer> parentCache = new ConcurrentHashMap<>();
+    public static ConcurrentReferenceHashMap<Object, PTracer> parentCache = new ConcurrentReferenceHashMap<>(16, ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
     public SubscriberInitWatch() throws PTraceException {
     }
