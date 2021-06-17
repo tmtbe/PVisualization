@@ -37,6 +37,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>1.0.7</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.zipkin.brave</groupId>
             <artifactId>brave</artifactId>
             <version>5.13.3</version>

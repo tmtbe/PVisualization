@@ -82,6 +82,14 @@ public abstract class PWatch implements RemoveHandle {
         }
     }
 
+    protected void startSpanWithAsync(Advice advice, Object tag, ExConsumer<Span> handler) {
+        PTracer.setParent(null);
+        startSpan(advice, (span -> {
+            PTracer.setSpanWithTag(span, tag);
+            handler.accept(span);
+        }));
+    }
+
     protected void setSpanName(Advice advice, Span span) {
         if (advice.getTarget() != null) {
             span.name(advice.getTarget().getClass().getSimpleName() + ":" + advice.getBehavior().getName());
@@ -126,6 +134,22 @@ public abstract class PWatch implements RemoveHandle {
         PTracer.setParent(context.getPTracer());
     }
 
+    @SneakyThrows
+    protected void finishSpanWithAsync(Advice advice, Object tag, ExConsumer<Span> handler) {
+        PTracer.setParent(null);
+        Span span = PTracer.getAndRemoveSpanWithTag(tag);
+        if (span != null) {
+            addAdviceAfterInfo(span, advice);
+            if (handler != null) {
+                handler.accept(span);
+            }
+            PTracer.finishSpan(span);
+            if (isTraceRoot) {
+                PTracer.finishTracer(span.context().traceId());
+            }
+        }
+    }
+
     protected void before(Advice advice) throws Throwable {
         startSpan(advice, null);
     }
@@ -157,7 +181,7 @@ public abstract class PWatch implements RemoveHandle {
 
     }
 
-    private void addAdviceAfterInfo(Span span, Advice advice) {
+    protected void addAdviceAfterInfo(Span span, Advice advice) {
         if (tracingLevel.getLevel() > TracingLevel.PERFORMANCE.getLevel()) {
             if (advice.isThrows()) {
                 span.error(advice.getThrowable());

@@ -28,10 +28,12 @@ public class ScheduledExecutorServiceWatch extends PWatch {
 
     @Override
     protected void before(Advice advice) throws Throwable {
+        if (advice.getParameterArray().length != 3) return;
         Object param = advice.getParameterArray()[0];
-        if (param instanceof Runnable) {
+
+        if (advice.getBehavior().getParameterTypes()[0].equals(Runnable.class)) {
             advice.changeParameter(0, TtlRunnable.get((Runnable) param, false, true));
-        } else if (param instanceof Callable) {
+        } else if (advice.getBehavior().getParameterTypes()[0].equals(Callable.class)) {
             advice.changeParameter(0, TtlCallable.get((Callable<?>) param, false, true));
         }
     }
