@@ -14,7 +14,7 @@ public class SubscriberOnNextWatch extends PWatch {
     protected WatchConfig createWatchConfig() {
         return WatchConfig.builder()
                 .className("org.reactivestreams.Subscriber")
-                .behaviorName("onNext")
+                .behaviorName("onNext|onError|onComplete")
                 .build();
     }
 
@@ -25,7 +25,9 @@ public class SubscriberOnNextWatch extends PWatch {
 
     @Override
     protected void before(Advice advice) throws Throwable {
-        PTracer pTracer = SubscriberInitWatch.parentCache.get(advice.getTarget());
-        PTracer.setParent(pTracer);
+        PTracer pTracer = SubscriberInitWatch.parentCache.remove(advice.getTarget());
+        if (pTracer != null) {
+            PTracer.setParent(pTracer);
+        }
     }
 }
