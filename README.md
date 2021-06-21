@@ -50,4 +50,4 @@ public class HttpServletWatch extends PWatch {
 }
 ```
 
-可以看到开发起来非常简单，只需要描述追踪的目标和增加追踪的数据即可。
+这是一个Http Servlet的监控，可以看到开发起来非常简单，只需要描述追踪的目标和增加追踪的数据即可。
