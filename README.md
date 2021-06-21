@@ -5,6 +5,7 @@
 
 * 采用无侵入模式，支持agent和attach
 * 可快速二次快速开发，实现自主业务关键点追踪
+* 融合TTL支持线程间依赖维护，自动维护跨线程上下文传递 https://github.com/alibaba/transmittable-thread-local
 * 基于魔改版jvm-sandbox https://github.com/tmtbe/jvm-sandbox
 
 # 开发示例
