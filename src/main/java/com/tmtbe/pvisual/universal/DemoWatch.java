@@ -21,6 +21,5 @@ public class DemoWatch extends PWatch {
     }
 
     protected void checking(ClassLoader classLoader) throws Throwable {
-
     }
 }

@@ -183,6 +183,7 @@ public abstract class PWatch implements RemoveHandle {
 
     protected void addAdviceAfterInfo(Span span, Advice advice) {
         if (tracingLevel.getLevel() > TracingLevel.PERFORMANCE.getLevel()) {
+            span.tag("thread", Thread.currentThread().getName());
             if (advice.isThrows()) {
                 span.error(advice.getThrowable());
                 if (advice.getThrowable().getCause() != null) {

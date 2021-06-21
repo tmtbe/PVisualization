@@ -17,7 +17,7 @@ public class SubscriberInitWatch extends PWatch {
     protected WatchConfig createWatchConfig() {
         return WatchConfig.builder()
                 .className("org.reactivestreams.Subscriber")
-                .behaviorName("<init>")
+                .behaviorName("onSubscribe")
                 .build();
     }
 
@@ -31,5 +31,10 @@ public class SubscriberInitWatch extends PWatch {
         if (PTracer.getParent() != null) {
             parentCache.put(advice.getTarget(), PTracer.getParent());
         }
+    }
+
+    @Override
+    protected void after(Advice advice) throws Throwable {
+
     }
 }
